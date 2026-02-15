@@ -3,6 +3,9 @@ class AudioController {
   private masterGain: GainNode | null = null;
   private droneNodes: AudioNode[] = [];
   public isMuted: boolean = false;
+  private heartbeatOsc: OscillatorNode | null = null;
+  private heartbeatGain: GainNode | null = null;
+  private heartbeatInterval: number | null = null;
 
   init() {
     if (this.ctx) return;
@@ -154,16 +157,123 @@ class AudioController {
     noise.start();
   }
 
+  playKnock() {
+    if (!this.ctx || !this.masterGain || this.isMuted) return;
+
+    // Simulate a knock on a heavy door
+    const t = this.ctx.currentTime;
+    
+    const createKnock = (startTime: number) => {
+        const osc = this.ctx!.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, startTime);
+        osc.frequency.exponentialRampToValueAtTime(40, startTime + 0.1);
+        
+        const gain = this.ctx!.createGain();
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+
+        // Lowpass to make it sound muffled/distant
+        const filter = this.ctx!.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
+
+        osc.connect(filter).connect(gain).connect(this.masterGain!);
+        osc.start(startTime);
+        osc.stop(startTime + 0.2);
+    };
+
+    createKnock(t);
+    createKnock(t + 0.4); // Second knock
+    if (Math.random() > 0.5) {
+        createKnock(t + 0.8); // Optional third knock
+    }
+  }
+
+  playScare() {
+    if (!this.ctx || !this.masterGain || this.isMuted) return;
+    
+    // Intense dissonance
+    const osc1 = this.ctx.createOscillator();
+    osc1.type = 'sawtooth';
+    osc1.frequency.value = 440;
+    osc1.frequency.linearRampToValueAtTime(200, this.ctx.currentTime + 2);
+
+    const osc2 = this.ctx.createOscillator();
+    osc2.type = 'square';
+    osc2.frequency.value = 450; // Dissontant interval
+    osc2.frequency.linearRampToValueAtTime(210, this.ctx.currentTime + 2);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2);
+
+    osc1.connect(gain).connect(this.masterGain);
+    osc2.connect(gain).connect(this.masterGain);
+    
+    osc1.start();
+    osc2.start();
+    osc1.stop(this.ctx.currentTime + 2);
+    osc2.stop(this.ctx.currentTime + 2);
+    
+    this.playGlitch(1.0);
+  }
+
+  playHeartbeat(intensity: number) {
+    if (!this.ctx || !this.masterGain || this.isMuted) return;
+
+    const t = this.ctx.currentTime;
+    
+    // Only play if not recently played (simple rhythm)
+    // For a real effect, we'll create a single beat sound
+    const createBeat = (time: number, vol: number) => {
+        const osc = this.ctx!.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, time);
+        osc.frequency.exponentialRampToValueAtTime(30, time + 0.1);
+        
+        const gain = this.ctx!.createGain();
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(vol, time + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+
+        osc.connect(gain).connect(this.masterGain!);
+        osc.start(time);
+        osc.stop(time + 0.25);
+    };
+
+    // Lub-Dub
+    createBeat(t, intensity * 0.8);
+    createBeat(t + 0.3, intensity * 0.5);
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
-    if (this.masterGain) {
+    if (this.masterGain && this.ctx) {
       this.masterGain.gain.setTargetAtTime(
         this.isMuted ? 0 : 0.2, 
-        this.ctx!.currentTime, 
+        this.ctx.currentTime, 
         0.1
       );
     }
+    
+    if (this.isMuted) {
+      this.stopSpeech();
+    }
     return this.isMuted;
+  }
+
+  stopSpeech() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  // Simplified speak method as user requested removal of click-to-speak logic
+  // Keeping it for potential future use or auto-narration if needed, but not used in UI now.
+  speak(text: string, isGlitch: boolean = false, onEnd?: () => void) {
+     if (onEnd) onEnd();
   }
 }
 

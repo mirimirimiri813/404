@@ -4,7 +4,7 @@ export interface Rule {
   content: string;
   note?: {
     text: string;
-    type: 'red' | 'blue' | 'black'; // Red = danger/blood, Blue = hint, Black = scribble
+    type: 'red' | 'blue' | 'black' | 'white'; // Red = danger/blood, Blue = hint, Black = scribble, White = paper note
     position: 'inline' | 'below' | 'overlay';
   };
   strikethrough?: boolean;

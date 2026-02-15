@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Rule } from '../types';
 import { GlitchText } from './GlitchText';
-import { EyeOff, AlertTriangle } from 'lucide-react';
+import { EyeOff } from 'lucide-react';
 import { audioManager } from '../utils/audio';
 
 interface RuleItemProps {
   rule: Rule;
+  onInteract?: (ruleId: string) => void;
 }
 
-export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
+export const RuleItem: React.FC<RuleItemProps> = ({ rule, onInteract }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = () => {
@@ -19,13 +20,20 @@ export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
     }
   };
 
-  // Special handling for Rule 15 (The Glitch Rule)
+  const handleClick = () => {
+    if (onInteract) {
+        onInteract(rule.id);
+    }
+  };
+
+  // Special handling for Rule 16 (The Glitch Rule)
   if (rule.isGlitch) {
     return (
       <div 
-        className="mb-8 p-4 border-l-4 border-red-900 bg-red-950/20 relative overflow-hidden group"
+        className={`mb-8 p-4 border-l-4 border-red-900 bg-red-950/20 relative overflow-hidden group cursor-pointer transition-colors duration-300`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
       >
         <div className="flex items-start">
           <span className="text-red-600 font-mono mr-3 text-xl font-bold animate-pulse">{rule.number}</span>
@@ -52,12 +60,13 @@ export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
       switch (rule.note?.type) {
         case 'red': return 'text-red-600 rotate-[-1deg]';
         case 'blue': return 'text-blue-500 rotate-[1deg]';
-        case 'black': return 'text-gray-900 bg-gray-200/90 px-1 rotate-[0.5deg]';
+        case 'black': return 'text-gray-200 bg-black px-2 py-1 rotate-[0.5deg] border border-gray-800 shadow-md'; 
+        case 'white': return 'text-black bg-[#e5e5e5] px-2 py-1 rotate-[-0.5deg] border border-gray-400 shadow-md font-bold';
         default: return 'text-gray-400';
       }
     };
 
-    const noteClasses = `block mt-2 font-handwriting text-xl tracking-wide ${getNoteColor()} opacity-90 relative`;
+    const noteClasses = `block mt-2 font-handwriting text-xl tracking-wide ${getNoteColor()} opacity-90 relative inline-block max-w-full`;
 
     return (
       <span className={noteClasses}>
@@ -70,7 +79,10 @@ export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
 
   return (
     <div 
-        className={`mb-6 relative group transition-all duration-500 ${rule.hidden ? 'opacity-0 hover:opacity-100 cursor-help' : 'opacity-100'}`}
+        className={`mb-6 relative group transition-all duration-500 rounded p-2 -mx-2 
+            ${rule.hidden ? 'opacity-0 hover:opacity-100 cursor-help' : 'opacity-100 cursor-pointer'}
+            hover:bg-white/5
+        `}
         onMouseEnter={() => {
             if (!rule.hidden || (rule.hidden && !isHovered)) {
                 audioManager.playHover();
@@ -78,32 +90,32 @@ export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
             setIsHovered(true);
         }}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
     >
       <div className="flex items-start">
         {/* Number */}
-        <span className="font-terminal text-green-700/80 mr-4 text-xl select-none mt-1">
+        <span className={`font-terminal mr-4 text-xl select-none mt-1 transition-colors text-green-700/80`}>
           {rule.number}
         </span>
 
         {/* Content Container */}
         <div className="flex-1">
-          <p className={`font-serif-kr text-gray-300 text-lg leading-relaxed relative ${rule.strikethrough ? 'line-through decoration-2 decoration-black text-gray-600' : ''}`}>
+          <p className={`font-serif-kr text-lg leading-relaxed relative inline-block
+             ${rule.strikethrough 
+                ? 'bg-black text-gray-200 px-1 shadow-[0_0_2px_#000]' 
+                : 'text-gray-300'
+             }`}>
             
-            {/* Strikethrough overlay to make it look like ink */}
-            {rule.strikethrough && (
-              <span className="absolute inset-0 bg-black/80 h-[2px] top-1/2 -translate-y-1/2 transform skew-y-1"></span>
-            )}
-
             {rule.content}
             
             {rule.note?.position === 'inline' && (
-               <span className="ml-2 block font-handwriting text-red-500 text-xl">{rule.note.text}</span>
+               <span className="ml-2 inline-block font-handwriting text-red-500 text-xl">{rule.note.text}</span>
             )}
           </p>
 
           {rule.strikethrough && rule.note && (
-             <div className="mt-1 font-handwriting text-2xl font-bold text-gray-100 relative">
-                <span className="absolute -inset-1 bg-black blur-sm -z-10 rounded-sm"></span>
+             <div className="mt-2 font-handwriting text-2xl font-bold text-gray-100 relative w-fit">
+                <span className="absolute inset-0 bg-black -z-10 skew-x-[-10deg] scale-105"></span>
                 {rule.note.text}
              </div>
           )}
