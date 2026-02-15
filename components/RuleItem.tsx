@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Rule } from '../types';
 import { GlitchText } from './GlitchText';
 import { EyeOff, AlertTriangle } from 'lucide-react';
+import { audioManager } from '../utils/audio';
 
 interface RuleItemProps {
   rule: Rule;
@@ -10,12 +11,20 @@ interface RuleItemProps {
 export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    audioManager.playHover();
+    if (rule.isGlitch) {
+        audioManager.playGlitch(0.3);
+    }
+  };
+
   // Special handling for Rule 15 (The Glitch Rule)
   if (rule.isGlitch) {
     return (
       <div 
         className="mb-8 p-4 border-l-4 border-red-900 bg-red-950/20 relative overflow-hidden group"
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="flex items-start">
@@ -60,7 +69,16 @@ export const RuleItem: React.FC<RuleItemProps> = ({ rule }) => {
   };
 
   return (
-    <div className={`mb-6 relative group transition-all duration-500 ${rule.hidden ? 'opacity-0 hover:opacity-100 cursor-help' : 'opacity-100'}`}>
+    <div 
+        className={`mb-6 relative group transition-all duration-500 ${rule.hidden ? 'opacity-0 hover:opacity-100 cursor-help' : 'opacity-100'}`}
+        onMouseEnter={() => {
+            if (!rule.hidden || (rule.hidden && !isHovered)) {
+                audioManager.playHover();
+            }
+            setIsHovered(true);
+        }}
+        onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="flex items-start">
         {/* Number */}
         <span className="font-terminal text-green-700/80 mr-4 text-xl select-none mt-1">

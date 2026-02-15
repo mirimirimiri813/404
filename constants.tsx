@@ -51,8 +51,9 @@ export const RULES_DATA: Chapter[] = [
     rules: [
       {
         id: "2-7",
-        number: "7.", // Intentional duplicate number as per prompt
+        number: "7.",
         content: "202호(잭)가 건네는 사탕은 받아도 됩니다. 단, 사탕 껍질을 절대 그가 보는 앞에서 까지 마십시오.",
+        strikethrough: true,
         note: {
           text: "사탕 아니야. 그거 뱉어. 당장 뱉어.",
           type: "black",

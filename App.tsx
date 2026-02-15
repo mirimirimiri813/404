@@ -2,20 +2,45 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NoiseOverlay } from './components/NoiseOverlay';
 import { RuleItem } from './components/RuleItem';
 import { RULES_DATA } from './constants';
-import { Power, Radio, Skull } from 'lucide-react';
+import { Power, Radio, Skull, Volume2, VolumeX } from 'lucide-react';
+import { audioManager } from './utils/audio';
 
 const App: React.FC = () => {
   const [booted, setBooted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   const handleBoot = () => {
+    // Initialize audio context on user gesture
+    audioManager.init();
+    audioManager.playBootSequence();
+    
     setLoading(true);
+    
+    // Simulate loading glitches
+    let glitchCount = 0;
+    const glitchInterval = setInterval(() => {
+      if (Math.random() > 0.6) {
+        audioManager.playGlitch(0.2);
+      }
+      glitchCount++;
+      if (glitchCount > 15) clearInterval(glitchInterval);
+    }, 150);
+
     setTimeout(() => {
+      clearInterval(glitchInterval);
       setLoading(false);
       setBooted(true);
+      // Play a confirmation sound
+      audioManager.playGlitch(0.1);
     }, 2500); // Fake boot time
+  };
+
+  const toggleMute = () => {
+    const muted = audioManager.toggleMute();
+    setIsMuted(muted);
   };
 
   const handleScroll = () => {
@@ -33,6 +58,7 @@ const App: React.FC = () => {
         <button 
           onClick={handleBoot}
           className="z-50 group flex flex-col items-center gap-4 text-green-900 hover:text-green-500 transition-colors duration-300"
+          onMouseEnter={() => audioManager.playHover()}
         >
           <Power size={64} className="group-hover:drop-shadow-[0_0_10px_rgba(0,255,0,0.8)]" />
           <span className="font-terminal text-2xl tracking-widest uppercase group-hover:animate-pulse">
@@ -77,14 +103,25 @@ const App: React.FC = () => {
         
         {/* Header / Status Bar */}
         <header className="bg-[#111] border-b border-[#222] p-4 flex justify-between items-center z-20 shrink-0">
-          <div className="flex items-center gap-2">
-            <Radio className={`text-red-500 ${scrollProgress > 0.8 ? 'animate-ping' : 'animate-pulse'}`} size={16} />
-            <h1 className="font-terminal text-xl tracking-widest text-gray-400">
-              GREY_MANSION_RULES.TXT
-            </h1>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <Radio className={`text-red-500 ${scrollProgress > 0.8 ? 'animate-ping' : 'animate-pulse'}`} size={16} />
+                <h1 className="font-terminal text-xl tracking-widest text-gray-400">
+                GREY_MANSION_RULES.TXT
+                </h1>
+            </div>
           </div>
-          <div className="font-terminal text-sm text-gray-600">
-            {scrollProgress > 0.9 ? 'RUN' : 'READ_ONLY'}
+          <div className="flex items-center gap-4">
+            <button 
+                onClick={toggleMute}
+                className="text-gray-600 hover:text-gray-300 transition-colors"
+                title={isMuted ? "Unmute" : "Mute"}
+            >
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+            <div className="font-terminal text-sm text-gray-600">
+                {scrollProgress > 0.9 ? 'RUN' : 'READ_ONLY'}
+            </div>
           </div>
         </header>
 
