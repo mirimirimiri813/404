@@ -8,16 +8,31 @@ class AudioController {
   private heartbeatInterval: number | null = null;
 
   init() {
-    if (this.ctx) return;
-    
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    this.ctx = new AudioContext();
     
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.2; // Main volume
-    this.masterGain.connect(this.ctx.destination);
+    // Create context if it doesn't exist
+    if (!this.ctx) {
+        this.ctx = new AudioContext();
+        
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.2; // Main volume
+        this.masterGain.connect(this.ctx.destination);
 
-    this.startDrone();
+        this.startDrone();
+    }
+
+    // Mobile Audio Unlock: Always attempt to resume if suspended
+    // This must be called within a user interaction event (which handleBoot is)
+    if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+    }
+    
+    // iOS Unlock Hack: Play a silent buffer to warm up the engine
+    const buffer = this.ctx.createBuffer(1, 1, 22050);
+    const source = this.ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.ctx.destination);
+    source.start(0);
   }
 
   private startDrone() {
